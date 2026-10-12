@@ -1,0 +1,17 @@
+diff --git a/app/src/pages.tsx b/app/src/pages.tsx
+index d5b7507..5e58566 100644
+--- a/app/src/pages.tsx
++++ b/app/src/pages.tsx
+@@ -189,10 +189,10 @@ export const NewAgentPage = ({ defaultVoice, voiceWorkerBaseUrl }: NewAgentPageP
+                 id="agent-workdir"
+                 name="workdir"
+                 type="text"
+-                value="~/"
++                value="~/projects"
+                 autocomplete="off"
+                 class="new-agent-form__option-input"
+-                placeholder="~/"
++                placeholder="~/projects"
+               />
+             </div>
+             {voiceWorkerBaseUrl ? (

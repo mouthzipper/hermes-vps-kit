@@ -1,0 +1,14 @@
+[Unit]
+Description=Sled (web UI for Claude Code via ACP), localhost only
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects
+ExecStart=%h/sled-run.sh
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,16 @@
+.env
+*.env
+!*.env.example
+**/.env
+.dev.vars
+auth.json
+*.pem
+*.key
+id_*
+hosts.yml
+.credentials.json
+*.bak-*
+state.db*
+sessions/
+logs/
+profiles.local/

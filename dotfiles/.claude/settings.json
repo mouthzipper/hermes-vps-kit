@@ -1,0 +1,23 @@
+{
+  "extraKnownMarketplaces": {
+    "pstack-claude": {
+      "source": {
+        "source": "github",
+        "repo": "michael-denyer/pstack-claude"
+      }
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 __HOME__/.claude/hooks/pr-reviewer-no-build.py"
+          }
+        ]
+      }
+    ]
+  }
+}
