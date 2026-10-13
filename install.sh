@@ -113,6 +113,11 @@ echo "==> projects layout"
 for d in ${PROJECTS:-}; do mkdir -p "$HOME/projects/$d"; done
 mkdir -p "$HOME/projects/logs"
 
+# sudo -iu / su don't set these; without them systemctl --user can't reach the (lingering) user manager
+if [[ -z "${XDG_RUNTIME_DIR:-}" && -d "/run/user/$(id -u)" ]]; then
+  export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+  export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+fi
 if [[ "$SKIP_SYSTEMD" == 1 ]] || ! systemctl --user show-environment >/dev/null 2>&1; then
   echo "==> systemd user manager not available (or SKIP_SYSTEMD=1): skipping units and herdr sessions"
   echo "Done."; exit 0

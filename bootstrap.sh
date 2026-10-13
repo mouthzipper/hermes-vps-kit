@@ -121,6 +121,11 @@ fi
 
 log "Linger for $VPS_USER (user services survive logout/reboot)"
 svc loginctl enable-linger "$VPS_USER"
+# linger starts user@UID.service asynchronously; wait so install.sh can install the user units
+if [[ $HAS_SYSTEMD == 1 && $DRY_RUN == 0 ]]; then
+  uid="$(id -u "$VPS_USER")"; systemctl start "user@$uid.service" 2>/dev/null || true
+  for _ in $(seq 20); do [[ -S /run/user/$uid/bus ]] && break; sleep 1; done
+fi
 
 log "User-level tooling"
 # install.sh must be readable by the user: copy the repo into their home if it lives somewhere private (e.g. /root)
