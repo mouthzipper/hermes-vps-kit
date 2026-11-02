@@ -9,12 +9,13 @@ import sys
 if os.environ.get("PR_REVIEWER_NO_BUILD") != "1":
     raise SystemExit(0)
 
-raw = os.environ.get("CLAUDE_TOOL_INPUT", "")
+raw = sys.stdin.read() or os.environ.get("CLAUDE_TOOL_INPUT", "")
 try:
     payload = json.loads(raw) if raw else {}
 except json.JSONDecodeError:
     payload = {}
 
+payload = payload.get("tool_input", payload)
 command = str(payload.get("command", ""))
 pattern = re.compile(
     r"(?:^|[;&|]\s*|\n)\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+|export\s+[^\n;]+\n\s*)*"

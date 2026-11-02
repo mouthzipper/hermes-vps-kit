@@ -5,6 +5,12 @@ Wants=network-online.target
 StartLimitIntervalSec=0
 
 [Service]
+NoNewPrivileges=yes
+PrivateTmp=yes
+# Home remains writable for agent workspaces, credentials and self-updates.
+# User-manager filesystem namespaces require unprivileged user namespaces.
+ProtectSystem=strict
+ReadWritePaths=%h %t
 Type=simple
 ExecStart=%h/.local/bin/hermes "gateway" "run"
 WorkingDirectory=%h/.hermes
