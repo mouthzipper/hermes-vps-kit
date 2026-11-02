@@ -3,7 +3,8 @@
     "pstack-claude": {
       "source": {
         "source": "github",
-        "repo": "michael-denyer/pstack-claude"
+        "repo": "michael-denyer/pstack-claude",
+        "ref": "7c045e5617b5c5f8e2aa3667f1377c50b192b6b9"
       }
     }
   },

@@ -3,6 +3,12 @@ Description=Sled (web UI for Claude Code via ACP), localhost only
 After=network-online.target
 
 [Service]
+NoNewPrivileges=yes
+PrivateTmp=yes
+# Home remains writable for agent workspaces, credentials and self-updates.
+# User-manager filesystem namespaces require unprivileged user namespaces.
+ProtectSystem=strict
+ReadWritePaths=%h %t
 Type=simple
 WorkingDirectory=%h/projects
 ExecStart=%h/sled-run.sh

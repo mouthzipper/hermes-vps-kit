@@ -15,25 +15,26 @@ Do these in order. ☐ = manual, 🤖 = done by `bootstrap.sh` / `install.sh`.
 ## 2. Bootstrap (automated)
 - [ ] `ssh root@<PUBLIC_IP>` (or `ubuntu@` on OVH/EC2, then `sudo -i`)
 - [ ] `git clone https://github.com/<you>/hermes-vps-kit && cd hermes-vps-kit` (or your private fork with your own `profiles.local/`)
-- [ ] `cp .env.example .env` and edit it (every variable is explained in the README; defaults work)
-- [ ] `./bootstrap.sh` as root (flags: `--no-sled --no-herdr --no-tailscale --no-hermes --no-claude --no-pi --skip-hardening --dry-run`)
-  - 🤖 apt base packages, user + NOPASSWD sudo, authorized_keys
+- [ ] `install -m 600 .env.example .env` and edit it (every variable is explained in the README)
+- [ ] `./bootstrap.sh` as root (flags: `--no-sled --no-herdr --no-tailscale --no-hermes --no-claude --no-pi --admin-sudo --tailscale-only-ssh --automatic-reboot HH:MM --skip-hardening --dry-run`)
+  - 🤖 apt base packages, user + SSH keys (NOPASSWD sudo only with `--admin-sudo`), authorized_keys
   - 🤖 sshd key-only (`00-hardening.conf`), ufw (OpenSSH only), fail2ban sshd jail, unattended-upgrades
   - 🤖 Node 22 (NodeSource), npm prefix `~/.npm-global`, pnpm, yarn, gh, Tailscale package
-  - 🤖 linger, Claude Code (native installer), Pi (`@mariozechner/pi-coding-agent`), Hermes Agent (official installer), herdr (official installer, SHA-256 verified)
-  - 🤖 Sled clone + `pages.patch` + `pnpm install`, `claude-code-acp`
-  - 🤖 dotfiles, Hermes config + profiles (profiles.local/ or examples/profiles), pstack + herdr skills, systemd user units (enabled), herdr sessions
-- [ ] **Before closing the root session**, in a new terminal confirm `ssh <VPS_USER>@<PUBLIC_IP> 'sudo -n true && echo ok'`.
+  - 🤖 linger, Claude Code (native installer), Pi (`@mariozechner/pi-coding-agent`), Hermes Agent (official installer), herdr (official installer; its SHA-256 check detects corrupted downloads, not a compromised source)
+  - 🤖 Sled clone + `pages.patch` + `pnpm install --frozen-lockfile`, `claude-code-acp`
+  - An empty Telegram allowlist returns a clear error after independent units are installed; configure it in step 3 and re-run `install.sh`.
+  - 🤖 dotfiles, Hermes config + profiles (profiles.local/ or examples/profiles), pstack + herdr skills, systemd user units (gateway enable requires a Telegram allowlist), herdr sessions
+- [ ] **Before closing the root session**, in a new terminal confirm `ssh <VPS_USER>@<PUBLIC_IP> 'id -un'`.
 
 ## 3. Logins and tokens (manual, as `<VPS_USER>`)
-- [ ] **Tailscale**: `sudo tailscale up` → open the URL, log in (no DNS needed; MagicDNS gives `<host>.<tailnet>.ts.net`). Then `sudo tailscale set --operator=$USER`.
+- [ ] **Tailscale** (administrator console): `tailscale up` → open the URL, log in (no DNS needed; MagicDNS gives `<host>.<tailnet>.ts.net`). Then `tailscale set --operator=<VPS_USER>` from the administrator console.
 - [ ] **Tailscale Serve for Sled** (tailnet-only HTTPS): enable HTTPS in the admin console (DNS → HTTPS certificates), then `tailscale serve --bg 8787`. Never use `tailscale funnel`.
 - [ ] **GitHub**: `gh auth login` (HTTPS, browser/device code) then `gh auth setup-git`.
 - [ ] **Claude Code** (if installed): `claude` → `/login`. Models come from `CLAUDE_MODEL` / `CLAUDE_SUBAGENT_MODEL` in `.env`, or Claude Code defaults.
 - [ ] **Hermes model**: `hermes model` → pick your provider and log in, or put its API key in `~/.hermes/.env`. If you set `HERMES_*` model variables in `.env`, make sure the ids exist for that provider (README → Choosing your model); fix and re-run `./install.sh` otherwise.
 - [ ] **Telegram**: @BotFather → `/newbot` → token. Get your numeric user id (@userinfobot). Put the token and id in `~/.hermes/.env` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS`), set `TELEGRAM_USER_ID` in `.env` and re-run `./install.sh`.
 - [ ] Optional: Pi login (`pi` → `/login`).
-- [ ] Reviewer: set `REVIEW_ORGS` in `.env`, re-run `./install.sh`.
+- [ ] Reviewer: set `REVIEW_ORGS` and explicitly trusted author logins in `TRUSTED_AUTHORS` in `.env`, re-run `./install.sh`.
 - [ ] Clone your repos into `~/projects` (`gh repo clone org/repo ~/projects/repo`).
 
 ## 4. Start services
@@ -46,9 +47,21 @@ Do these in order. ☐ = manual, 🤖 = done by `bootstrap.sh` / `install.sh`.
 - [ ] Telegram: message the bot → reply
 - [ ] Phone on tailnet: `https://<host>.<tailnet>.ts.net` opens Sled
 - [ ] `herdr session list` → all sessions running; attach `ssh <user>@<host>` then `herdr session attach <name>`
-- [ ] `sudo reboot`, then re-run `verify.sh` (user services come back via linger)
+- [ ] Reboot from the administrator console, then re-run `verify.sh` (user services come back via linger)
 
 ## Attach cheatsheet
 - SSH: `ssh <user>@<PUBLIC_IP>` or `ssh <user>@<tailscale-host>`
 - herdr: `herdr session attach <name>`; detach `ctrl+b q`; from a laptop with herdr: `herdr --remote <user>@<host> --session <name>`
 - Hermes CLI: `hermes -p <profile> chat`
+
+## Hardening checks
+
+- [ ] Retain provider console access; verify key login as `VPS_USER`. Root SSH is disabled and `AllowUsers` restricts logins to this user. Use a separate administrator for privileged setup; `--admin-sudo` is an explicit root-access opt-in for agents.
+- [ ] Use one-off, tagged, expiring Tailscale auth keys with restricted ACLs. Bootstrap uses a temporary 0600 key file and shreds it; the agent checkout receives no copy of the source `.env`. Remove the source key after enrollment.
+- [ ] Optional `--tailscale-only-ssh`: connect as `VPS_USER` over the Tailscale IPv4 address first, preserve `SSH_CONNECTION` through authorized sudo, and keep console access. Confirm public TCP 22 is closed and tailnet SSH works. Later bootstrap runs preserve this policy.
+- [ ] Optional `--automatic-reboot HH:MM`: choose a server-local maintenance time; re-running without the flag disables automatic reboot.
+- [ ] Set `TELEGRAM_ALLOWED_USERS` in `~/.hermes/.env` before re-running `install.sh`; an empty allowlist refuses gateway enable and stops/disables an existing gateway.
+- [ ] Review pins before bumping npm versions, Sled revision/patch, skills SHAs and Claude marketplace `source.ref`. Apt repos use `signed-by` keyrings. Native agent installers/self-updates still trust upstream.
+- [ ] For non-allowlisted PR authors, static review only. Run untrusted code only in a throwaway container without `gh` login, credentials, secrets, host mounts or privileges.
+- [ ] Check user service sandbox properties and journals; home/runtime remain writable and unprivileged user namespaces must be supported.
+- [ ] Report vulnerabilities through the private reporting link in SECURITY.md.

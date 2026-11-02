@@ -1,7 +1,7 @@
-.env
+.env*
 *.env
-!*.env.example
-**/.env
+!.env.example
+!*.example
 .dev.vars
 auth.json
 *.pem
@@ -14,3 +14,5 @@ state.db*
 sessions/
 logs/
 profiles.local/
+
+__pycache__/
